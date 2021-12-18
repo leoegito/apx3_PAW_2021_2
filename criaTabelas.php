@@ -1,11 +1,11 @@
 <?php
 
-$conn = new PDO('mysql:dbname=db_apx3;host=localhost','root','');
-createTable($conn);
+$db = new PDO('mysql:dbname=db_apx3;host=localhost','root','');
+createTable($db);
 
-function createTable($conn){
+function createTable($db){
 	
-	$stmt = $conn->prepare(
+	$stmt = $db->prepare(
 		"
 		CREATE TABLE IF NOT EXISTS `db_apx3`.`Equipamento` (
 			id INT auto_increment PRIMARY KEY,
@@ -44,5 +44,3 @@ function createTable($conn){
 	}
 
 }
-
-?>

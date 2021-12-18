@@ -1,177 +1,172 @@
-<?php
+<?php 
 
 class Usuário{
 
-	private int $id;
-	private string $nome;
-	private string $perfil;
-	private $db;
+    private int $id;
+    private string $nome;
+    private string $perfil;
+    private $db;
 
-	public function __construct($db, string $nome, string $perfil){
+    public function __construct($db, string $nome, string $perfil){
 
-		$this->db = $db;
-		$this->nome = $nome;
-		$this->perfil = $perfil;
+        $this->db = $db;
+        $this->nome = $nome;
+        $this->perfil = $perfil;
 
-	}
+    }
 
-	//Getters & setters
-	public function getNome(){
-		return $this->nome;
-	}
+    //Getters & setters
+    public function getNome(){
+        return $this->nome;
+    }
 
-	public function getPerfil(){
-		return $this->perfil;
-	}
+    public function getPerfil(){
+        return $this->perfil;
+    }
 
-	public function getId(){
-		return (int) $this->id;
-	}
+    public function getId(){
+        return (int) $this->id;
+    }
 
-	public function setId($id){
-		$this->id = $id;
-	}
+    public function setId($id){
+        $this->id = $id;
+    }
 
+    //Salva usuário no BD
+    public function save(){
 
-	//Salva usuário no BD
-	public function save(){
+        //verifica se o usuário já existe no banco de dados,
+        //insere apenas caso não exista
+        //seria melhor caso fosse passado o ID pela classe e não
+        //pelo BD, porém seguindo o enunciado da questão, considerei
+        //um usuário existente se tiver o nome e categoria iguais
 
-		//verifica se o usuário já existe no banco de dados,
-		//insere apenas caso não exista
-		//seria melhor caso fosse passado o ID pela classe e não
-		//pelo BD, porém seguindo o enunciado da questão, considerei
-		//um usuário existente se tiver o nome e categoria iguais
+        $stmt = $this->db->prepare(
+            "
+            SELECT id FROM `usuário` WHERE Nome = :nome AND Perfil = :perfil;
+            "
+        );
 
-		$stmt = $this->db->prepare(
-			"
-			SELECT id FROM `usuário` WHERE Nome = :nome AND Perfil = :perfil;
-			"
-		);
+        $stmt->execute([
+            ':nome'=>$this->getNome(),
+            ':perfil'=>$this->getPerfil()
+        ]);
 
-		$stmt->execute([
-			':nome'=>$this->getNome(),
-			':perfil'=>$this->getPerfil()
-		]);
+        $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-		$results = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        if(!isset($results[0]) || count($results) == 0){
 
-		if(!isset($results[0]) || count($results) == 0){
+            $stmt2 = $this->db->prepare(
+                "
+                INSERT INTO `usuário` VALUES (null, :nome, :perfil);
+                "
+            );
 
-			$stmt2 = $this->db->prepare(
-				"
-				INSERT INTO `usuário` VALUES (null, :nome, :perfil);
-				"
-			);
+            $stmt2->execute([
+                ':nome'=>$this->getNome(),
+                ':perfil'=>$this->getPerfil()
+            ]);
 
+            $stmtID = $this->db->prepare("SELECT MAX(id) AS id FROM `usuário`;");
 
-			$stmt2->execute([
-				':nome'=>$this->getNome(),
-				':perfil'=>$this->getPerfil()
-			]);
+            $stmtID->execute();
 
-			$stmtID = $this->db->prepare("SELECT MAX(id) AS id FROM `usuário`;");
+            $resultID = $stmtID->fetchAll(PDO::FETCH_ASSOC);
 
-			$stmtID->execute();
+            $this->setId((int) $resultID[0]['id']);
 
-			$resultID = $stmtID->fetchAll(PDO::FETCH_ASSOC);
+            echo '<p>Usuário de id: ' .$this->getId() .' cadastrado com sucesso.</p>';
 
-			$this->setId((int) $resultID[0]['id']);
+        } else {
 
-			echo '<p>Usuário de id: ' .$this->getId() .' cadastrado com sucesso.</p>';
+            $this->setId( (int) $results[0]['id']);
+            
+            echo '<p>O usuário já existe no banco de dados. Nada foi alterado ou inserido no BD.</p>';
+        }
 
-		} else {
-
-			$this->setId( (int) $results[0]['id']);
-			
-			echo '<p>O usuário já existe no banco de dados. Nada foi alterado ou inserido no BD.</p>';
-		}
-
-
-	}	
+    }   
 
 }
 
 class Equipamento{
 
-	private int $id;
-	private string $nome;
-	private string $categoria;
-	private $db;
+    private int $id;
+    private string $nome;
+    private string $categoria;
+    private $db;
 
-	public function __construct($db, string $nome, string $categoria){
+    public function __construct($db, string $nome, string $categoria){
 
-		$this->db = $db;
-		$this->nome = $nome;
-		$this->categoria = $categoria;
+        $this->db = $db;
+        $this->nome = $nome;
+        $this->categoria = $categoria;
 
-	}
+    }
 
-	//Getters & setters
-	public function getNome(){
-		return $this->nome;
-	}
+    //Getters & setters
+    public function getNome(){
+        return $this->nome;
+    }
 
-	public function getCategoria(){
-		return $this->categoria;
-	}
+    public function getCategoria(){
+        return $this->categoria;
+    }
 
-	public function getId(){
-		return (int) $this->id;
-	}
+    public function getId(){
+        return (int) $this->id;
+    }
 
-	public function setId(int $id){
-		$this->id = $id;
-	}
+    public function setId(int $id){
+        $this->id = $id;
+    }
 
-	//Salva o equipamento no BD
-	public function save(){
+    //Salva o equipamento no BD
+    public function save(){
 
-		$stmt = $this->db->prepare(
-			"
-			SELECT id FROM `equipamento` WHERE Nome = :nome AND Categoria = :categoria;
-			"
-		);
+        $stmt = $this->db->prepare(
+            "
+            SELECT id FROM `equipamento` WHERE Nome = :nome AND Categoria = :categoria;
+            "
+        );
 
-		$stmt->execute([
-			':nome'=>$this->getNome(),
-			':categoria'=>$this->getCategoria()
-		]);
+        $stmt->execute([
+            ':nome'=>$this->getNome(),
+            ':categoria'=>$this->getCategoria()
+        ]);
 
-		$results = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-		if(!isset($results[0]) || count($results) == 0){
+        if(!isset($results[0]) || count($results) == 0){
 
-			$stmt2 = $this->db->prepare(
-				"
-				INSERT INTO `equipamento` VALUES (null, :nome, :categoria);
-				"
-			);
+            $stmt2 = $this->db->prepare(
+                "
+                INSERT INTO `equipamento` VALUES (null, :nome, :categoria);
+                "
+            );
 
+            $stmt2->execute([
+                ':nome'=>$this->getNome(),
+                ':categoria'=>$this->getCategoria()
+            ]);
 
-			$stmt2->execute([
-				':nome'=>$this->getNome(),
-				':categoria'=>$this->getCategoria()
-			]);
+            $stmtID = $this->db->prepare("SELECT MAX(id) AS id FROM `equipamento`;");
 
-			$stmtID = $this->db->prepare("SELECT MAX(id) AS id FROM `equipamento`;");
+            $stmtID->execute();
 
-			$stmtID->execute();
+            $resultID = $stmtID->fetchAll(PDO::FETCH_ASSOC);
 
-			$resultID = $stmtID->fetchAll(PDO::FETCH_ASSOC);
+            $this->setId((int) $resultID[0]['id']);
 
-			$this->setId((int) $resultID[0]['id']);
+            echo '<p>Equipamento de id: ' .$this->getId() .' cadastrado com sucesso.</p>';
 
-			echo '<p>Equipamento de id: ' .$this->getId() .' cadastrado com sucesso.</p>';
+        } else {
 
-		} else {
+            $this->setId( (int) $results[0]['id']);
 
-			$this->setId( (int) $results[0]['id']);
+            echo '<p>Equipamento com nome e categoria já existente no banco de dados. Nada foi alterado ou inserido no BD.</p>';
+        }
 
-			echo '<p>Equipamento com nome e categoria já existente no banco de dados. Nada foi alterado ou inserido no BD.</p>';
-		}
-
-
-	}
+    }
 
 }
 
@@ -315,31 +310,8 @@ class Movimentação{
 
 	}
 
-	function consulta_Empréstimo($db, Equipamento $equipamento){
-
-		if(!$db || !$equipamento){
-			return;
-		}
-
-		$this->db = $db;
-		$this->Equipamento_id = $equipamento->getId();
-
-		$stmt = $this->db->prepare("
-			SELECT b.Nome, SUM(Quantidade) AS Quantidade FROM movimentação as a JOIN usuário as b WHERE a.Equipamento_id = :Equipamento_id AND a.Usuário_id = b.id GROUP BY a.Usuário_id;
-		");
-
-		$stmt->execute([
-			':Equipamento_id'=>$this->Equipamento_id
-		]);
-
-		$results = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-		print("<pre>" .print_r($results, true) ."</pre>");
-
-		return $results;
-	}
-
 }//fim Class
+
 
 $db = new PDO('mysql:dbname=db_apx3;host=localhost','root','');
 
@@ -357,11 +329,11 @@ $e2->save();
 
 $m =  new Movimentação($db);
 
+//Fim da repetição do enunciado da Q2
+
 $m->registra_empréstimo($e1, 1, $u1);
 $m->registra_empréstimo($e1, 4, $u1);
 $m->registra_empréstimo($e2, 2, $u1);
 $m->registra_Devolução($e1, 3, $u1);
-
-$m->consulta_Empréstimo($db, $e1);
 
 ?>

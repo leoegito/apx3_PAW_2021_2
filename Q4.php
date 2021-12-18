@@ -1,4 +1,4 @@
-<?php
+<?php 
 
 class Usuário{
 
@@ -356,11 +356,6 @@ $e2 = new Equipamento($db, "Kit ferro de solda", "Ferramenta");
 $e2->save();
 
 $m =  new Movimentação($db);
-
-$m->registra_empréstimo($e1, 1, $u1);
-$m->registra_empréstimo($e1, 4, $u1);
-$m->registra_empréstimo($e2, 2, $u1);
-$m->registra_Devolução($e1, 3, $u1);
 
 $m->consulta_Empréstimo($db, $e1);
 

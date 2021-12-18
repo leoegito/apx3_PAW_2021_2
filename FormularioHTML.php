@@ -100,6 +100,8 @@ function getMovimentacao($db, $Usuario_id){
 
 				echo "<p>Exibindo equipamentos emprestados (<strong>saldo</strong>) com o usuário " .$nome .":</p>";
 
+				echo "<label for='tabela'>2.</label>";
+
 				if(sizeof($emprestimos) == 0){
 
 					echo "<p>Nenhum equipamento encontrado.</p>";
