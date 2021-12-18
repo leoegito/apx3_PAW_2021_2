@@ -100,7 +100,13 @@ function getMovimentacao($db, $Usuario_id){
 
 				echo "<p>Exibindo equipamentos emprestados (<strong>saldo</strong>) com o usuário " .$nome .":</p>";
 
-				echo "<table style='padding: 5px; border: 3px solid black;'>";
+				if(sizeof($emprestimos) == 0){
+
+					echo "<p>Nenhum equipamento encontrado.</p>";
+
+				} else{
+
+					echo "<table style='padding: 5px; border: 3px solid black;'>";
 
 					echo "<tr>";
 						echo "<th>Equipamento</th>";
@@ -115,7 +121,11 @@ function getMovimentacao($db, $Usuario_id){
 						echo "</tr>";
 					}
 
-				echo "</table";
+					echo "</table";
+
+				}
+
+
 			}
 
 		?>
