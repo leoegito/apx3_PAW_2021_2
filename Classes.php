@@ -75,8 +75,6 @@ class Usuário{
 
 			$resultID = $stmtID->fetchAll(PDO::FETCH_ASSOC);
 
-			var_dump($resultID);
-
 			$this->setId((int) $resultID[0]['id']);
 
 			echo '<p>Usuário de id: ' .$this->getId() .' cadastrado com sucesso.</p>';
@@ -189,21 +187,11 @@ class Movimentação{
 	//Como somente $db é passado na questão, este é o construtor
 	//parcial apenas para a Q2
 	public function __construct($db){
-
 		$this->db = $db;
-		//$this->data = new DateTime('now', new DateTimeZone('America/Sao_Paulo'));
 
 	}
 
 	//Getters & Setters
-	// public function getQuantidade(){
-	// 	return $this->quantidade;
-	// }
-
-	// public function setQuantidade(int $quantidade){
-	// 	$this->quantidade = $quantidade;
-	// }
-
 	public function setId(int $id){
 		$this->id = $id;
 	}
@@ -213,25 +201,25 @@ class Movimentação{
 	}
 
 	//devem retornar o ID do registro recém-inserido
+	//retorna -1 quando há erro
 	public function registra_empréstimo(Equipamento $equipamento,int $quantidade, Usuário $usuário){
 		//
+		if(!isset($equipamento) || !isset($usuário) || $quantidade < 0){
+			echo '<p>Dados incorretos para o empréstimo.</p>';
+			return -1;
+		}
+
 		$this->quantidade = (int) $quantidade;
 		$this->Equipamento_id = $equipamento->getId();
 		$this->Usuario_id = $usuário->getId();
+
+		//Poderia alterar de outra forma, mas essa é mais simples e faz sentido alterar direto no servidor
 		date_default_timezone_set('America/Sao_Paulo');
 		$this->data = new DateTime('now');
 
-		var_dump($this);
-
-		echo '<br> DateTime: ';
-
-		echo $this->data->format('Y-m-d H:i:s');
 
 		$stmt = $this->db->prepare("INSERT INTO `db_apx3`.`movimentação` (id, Data, Quantidade, Equipamento_id, Usuário_id) VALUES (null, :Data, :Quantidade, :Equipamento_id, :Usuario_id);");
-		// $stmt = $this->db->prepare("INSERT INTO `db_apx3`.`movimentação` VALUES (?, ?, ?, ?, ?);");
 
-		echo "</br>VAR DUMP: </br>";
-		var_dump($this->Usuario_id);
 
 		$result = $stmt->execute([
 			':Data'=>$this->data->format('Y-m-d H:i:s'),
@@ -248,8 +236,6 @@ class Movimentação{
 
 			$resultID = $stmtID->fetchAll(PDO::FETCH_ASSOC);
 
-			var_dump($resultID);
-
 			$this->setId((int) $resultID[0]['id']);
 
 			return $this->getId();
@@ -260,17 +246,101 @@ class Movimentação{
 
 	}
 
-	public function registra_devolução(){
+	public function registra_devolução(Equipamento $equipamento,int $quantidade, Usuário $usuário){
 		//deve verificar:
 			//qtd_devolvida > qtd_emprestada, entao return -1;
 				//return -1 == erro
-			//
+			//A devolução, de acordo com o enunciado, é sempre
+			//uma movimentação com número/quantidade NEGATIVO
+		if(!isset($equipamento) || !isset($usuário) || $quantidade < 0){
+			echo '<p>Dados incorretos para a devolução.</p>';
+			return;
+		}
+
+		//Transformando a qtd da Classe em uma qtd negativa para
+		//devolução
+		$this->quantidade = (int) ($quantidade * -1);
+		$this->Equipamento_id = $equipamento->getId();
+		$this->Usuario_id = $usuário->getId();
+		date_default_timezone_set('America/Sao_Paulo');
+		$this->data = new DateTime('now');
+
+		$stmtQTD = $this->db->prepare("
+			SELECT SUM(Quantidade) AS Quantidade FROM `db_apx3`.`movimentação` WHERE Equipamento_id = :Equipamento_id AND Usuário_id = :Usuario_id;
+		");
+
+		$stmtQTD->execute([
+			':Equipamento_id'=>$this->Equipamento_id,
+			':Usuario_id'=>$this->Usuario_id
+		]);
+
+		$quantidadeEmprestada = $stmtQTD->fetchAll(PDO::FETCH_ASSOC);
+
+		//Validação da quantidade devolvida x qtd emprestada
+		if($quantidadeEmprestada[0]['Quantidade'] < $quantidade){
+			echo '<p>Quantidade devolvida é maior que a quantidade emprestada.</p>';
+			return -1;
+		} else if (!$quantidadeEmprestada){
+			echo '<p>Equipamento ou usuário não possui empréstimo registrado. Por favor tente novamente com os dados corretos.</p>';
+			return;
+		}
+
+		//Caso os dados sejam válidos, não caiu em nenhum return
+		$stmt = $this->db->prepare("INSERT INTO `db_apx3`.`movimentação` (id, Data, Quantidade, Equipamento_id, Usuário_id) VALUES (null, :Data, :Quantidade, :Equipamento_id, :Usuario_id);");
+
+
+		$result = $stmt->execute([
+			':Data'=>$this->data->format('Y-m-d H:i:s'),
+			':Quantidade'=>$this->quantidade,
+			':Equipamento_id'=>$this->Equipamento_id,
+			':Usuario_id'=>$this->Usuario_id
+		]);
+
+		if($result){
+
+			$stmtID = $this->db->prepare("SELECT MAX(`id`) AS `id` FROM `db_apx3`.`movimentação`;");
+
+			$stmtID->execute();
+
+			$resultID = $stmtID->fetchAll(PDO::FETCH_ASSOC);
+
+			$this->setId((int) $resultID[0]['id']);
+
+			return $this->getId();
+
+		} else{
+			echo '<p>Erro na inserção no BD.</p>';
+			return;
+		}		
+
 
 	}
 
+	function consulta_Empréstimo($db, Equipamento $equipamento){
 
+		if(!$db || !$equipamento){
+			return;
+		}
 
-}
+		$this->db = $db;
+		$this->Equipamento_id = $equipamento->getId();
+
+		$stmt = $this->db->prepare("
+			SELECT b.Nome, SUM(Quantidade) AS Quantidade FROM movimentação as a JOIN usuário as b WHERE a.Equipamento_id = :Equipamento_id AND a.Usuário_id = b.id GROUP BY a.Usuário_id;
+		");
+
+		$stmt->execute([
+			':Equipamento_id'=>$this->Equipamento_id
+		]);
+
+		$results = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+		print("<pre>" .print_r($results, true) ."</pre>");
+
+		return $results;
+	}
+
+}//fim Class
 
 $db = new PDO('mysql:dbname=db_apx3;host=localhost','root','');
 
@@ -288,13 +358,12 @@ $e2->save();
 
 $m =  new Movimentação($db);
 
-//var_dump($m);
-
 $m->registra_empréstimo($e1, 1, $u1);
 
-//var_dump($m);
-// $m->registra_empréstimo($e1, 4, $u1);
-// $m->registra_empréstimo($e2, 2, $u1);
-// $m->registra_Devolução($e1, 3, $u1);
+$m->registra_empréstimo($e1, 4, $u1);
+$m->registra_empréstimo($e2, 2, $u1);
+$m->registra_Devolução($e1, 3, $u1);
+
+$m->consulta_Empréstimo($db, $e1);
 
 ?>
