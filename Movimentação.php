@@ -11,13 +11,14 @@ class Movimentação{
 
 	//Como somente $db é passado na questão, este é o construtor
 	//parcial apenas para a Q2
-	public function __construct($db, int $quantidade, int $Equipamento_id, int $Usuário_id){
+	//public function __construct($db, int $quantidade, int $Equipamento_id, int $Usuário_id){
+	public function __construct($db){
 
 		$this->db = $db;
 		// $this->data = new DateTime('now', new DateTimeZone('America/Sao_Paulo'));
-		$this->quantidade = $quantidade;
-		$this->Equipamento_id = $Equipamento_id;
-		$this->Usuário_id = $Usuário_id;
+		// $this->quantidade = $quantidade;
+		// $this->Equipamento_id = $Equipamento_id;
+		// $this->Usuário_id = $Usuário_id;
 
 	}
 
@@ -38,7 +39,11 @@ class Movimentação{
 
 
 }
+$m = new Movimentação($db);
 
-$m->registra_empréstimo();
+$m->registra_empréstimo($e1, 1, $u1);
+$m->registra_empréstimo($e1, 4, $u1);
+$m->registra_empréstimo($e2, 2, $u1);
+$m->registra_Devolução($e1, 3, $u1);
 
 ?>
